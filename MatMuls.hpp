@@ -3,7 +3,7 @@
 #include "Matrix.hpp"
 
 namespace matmul {
-    enum class MatMulType {
+    enum  MatMulType {
         NAIVE,
         CACHE_OPTIMIZED,
         SIMD
