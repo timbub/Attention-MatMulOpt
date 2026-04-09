@@ -36,12 +36,12 @@ namespace matmul {
         const size_t rows3 = ans.get_rows();
         const size_t cols3 = ans.get_cols();
 
-        assert(cols1 != rows2 || rows3 == rows1 || cols3 != cols2);
+        assert(cols1 == rows2 && rows3 == rows1 && cols3 == cols2);
 
         for(size_t i = 0; i < rows1; ++i) {
             for(size_t j = 0; j < cols2; j++) {
                 float sum = 0.0f;
-                for(size_t k = 0; k < cols2; j++) {
+                for(size_t k = 0; k < cols1; k++) {
                     sum += mat1[i][k] * mat2[k][j];
                 }
                 ans[i][j] = sum;
@@ -61,7 +61,7 @@ namespace matmul {
         const size_t rows3 = ans.get_rows();
         const size_t cols3 = ans.get_cols();
 
-        assert(cols1 != rows2 || rows3 == rows1 || cols3 != cols2);
+        assert(cols1 == rows2 && rows3 == rows1 && cols3 == cols2);
 
         for (size_t i0 = 0; i0 < rows1; i0 += tilling_size) {
             for (size_t k0 = 0; k0 < cols1; k0 += tilling_size) {
@@ -98,7 +98,7 @@ namespace matmul {
         const size_t rows3 = ans.get_rows();
         const size_t cols3 = ans.get_cols();
 
-        assert(cols1 != rows2 || rows3 == rows1 || cols3 != cols2);
+        assert(cols1 == rows2 && rows3 == rows1 && cols3 == cols2);
     }
 };
 

@@ -10,7 +10,7 @@ namespace tensor {
         size_t dim_;
         matrix::BufMatrix<ElemT> data_;
     public:
-        Tensor(size_t b, size_t s, size_t d) : batch_size_(b), seq_len_(s), dim_(d) {}
+        Tensor(size_t b, size_t s, size_t d) : batch_size_(b), seq_len_(s), dim_(d), data_(b*s*d) {}
         Tensor(const Tensor& other)            = delete;
         Tensor& operator=(const Tensor& other) = delete;
 

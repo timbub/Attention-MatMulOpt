@@ -69,8 +69,7 @@ int main(int argc, char* argv[]) {
         auto end_time = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> time = end_time - start_time;
 
-        //add type
-        //std::cout << "[TYPE:" <<  << "Attention time: " << time.count() << " ms\n";
+        std::cout << "[MODE: " << mode << "] | Attention time: " << time.count() << " ms\n";
     } catch (const std::exception& e) {
         std::cerr << "Error: " << e.what() << "\n";
         return 1;
