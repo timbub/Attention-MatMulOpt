@@ -9,9 +9,9 @@ def generate_tensor(b, s, d):
     return res + "\n"
 
 if __name__ == "__main__":
-    filename = sys.argv[1] if len(sys.argv) > 1 else "input.txt"
+    B, Sq, Sk, Dk, Dv = 1, 2048, 2048, 2048, 2048
 
-    B, Sq, Sk, Dk, Dv = 100, 20, 30, 40, 50
+    filename = f"{B*Sq*Dv}.txt"
 
     with open(filename, "w") as f:
         f.write(generate_tensor(B, Sq, Dk))

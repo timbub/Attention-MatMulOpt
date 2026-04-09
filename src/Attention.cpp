@@ -51,6 +51,7 @@ namespace attention {
         switch (matmul_type) {
             case matmul::MatMulType::NAIVE:           run_matmul = matmul::naive_matmul; break;
             case matmul::MatMulType::CACHE_OPTIMIZED: run_matmul = matmul::cache_opt_matmul; break;
+            case matmul::MatMulType::TILLING:         run_matmul = matmul::tilling_matmul;  break;
             case matmul::MatMulType::SIMD:            run_matmul = matmul::simd_matmul;  break;
         }
 
@@ -60,12 +61,13 @@ namespace attention {
             auto v_mat = V.get_batch(i);
             auto res_mat = result.get_batch(i);
 
+            std::fill(&scores[0][0], &scores[0][0] + (seq_q * seq_k), 0.0f);
             matmul::transpose(k_mat, k_T);
-            run_matmul(q_mat, k_T, scores, matmul_type);
+            run_matmul(q_mat, k_T, scores, tilling_size);
             matmul::scaling(scores, scale);
             softmax(scores);
 
-            run_matmul(scores, v_mat, res_mat, matmul_type);
+            run_matmul(scores, v_mat, res_mat, tilling_size);
         }
         return result;
     }

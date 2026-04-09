@@ -32,6 +32,10 @@ target_link_libraries(att_lib PUBLIC matrix_lib)
 target_link_libraries(att PRIVATE att_lib)
 target_link_libraries(att PRIVATE matrix_lib)
 
+target_compile_options(att_lib PRIVATE -O3 -mavx2 -mfma -march=native)
+target_compile_options(att PRIVATE -O3 -mavx2 -mfma -march=native)
+
+
 
 
 

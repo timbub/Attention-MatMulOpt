@@ -6,5 +6,5 @@ Makefile
 *.mk
 *.o
 *.
-Testing/
-
+Testingii
+tests/*.txt

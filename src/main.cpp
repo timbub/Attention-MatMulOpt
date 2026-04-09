@@ -39,6 +39,8 @@ int main(int argc, char* argv[]) {
         matmul_type = matmul::MatMulType::NAIVE;
     } else if (mode == "cache") {
         matmul_type = matmul::MatMulType::CACHE_OPTIMIZED;
+    } else if (mode == "tilling") {
+        matmul_type = matmul::MatMulType::TILLING;
 
         if (argc >= 3) {
             tilling_size = std::stoul(argv[2]);
