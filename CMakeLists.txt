@@ -16,12 +16,12 @@ add_link_options(
     $<$<CONFIG:Debug>:-fno-omit-frame-pointer>
 )
 
-add_executable(att main.cpp)
+add_executable(att main.cpp Attention.cpp MatMuls.cpp)
 
 add_library(matrix_lib INTERFACE)
 target_include_directories(matrix_lib INTERFACE ../Matrix_cpp/matrix)
 
-target_link_libraries(att PRIVATE my_matrix_lib)
+target_link_libraries(att PRIVATE matrix_lib)
 
 
 

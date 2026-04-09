@@ -1,9 +1,32 @@
 #include "MatMuls.hpp"
 
 namespace matmul {
+    void transpose(const matrix::Matrix<float>& src, matrix::Matrix<float>& dst) {
+        const size_t rows = src.get_rows();
+        const size_t cols = src.get_cols();
+        for (size_t i = 0; i < rows; ++i) {
+            for (size_t j = 0; j < cols; ++j) {
+                dst[j][i] = src[i][j];
+            }
+        }
+    }
+
+    void scaling(matrix::Matrix<float>& mat, float scale) {
+        const size_t rows = mat.get_rows();
+        const size_t cols = mat.get_cols();
+
+        float scale_factor = 1.0f / std::sqrt(static_cast<float>(scale));
+
+        for (size_t i = 0; i < rows; ++i) {
+            for (size_t j = 0; j < cols; ++j) {
+                mat[i][j] *= scale_factor;
+            }
+        }
+    }
+
     void naive_matmul(const matrix::Matrix<float>& mat1,
                       const matrix::Matrix<float>& mat2,
-                      const matrix::Matrix<float>& ans) {
+                      matrix::Matrix<float>& ans, size_t tilling_size) {
         const size_t rows1 = mat1.get_rows();
         const size_t cols1 = mat1.get_cols();
 
@@ -28,7 +51,7 @@ namespace matmul {
 
     void cache_opt_matmul(const matrix::Matrix<float>& mat1,
                           const matrix::Matrix<float>& mat2,
-                          const matrix::Matrix<float>& ans, size_t tilling_size) {
+                          matrix::Matrix<float>& ans, size_t tilling_size) {
         const size_t rows1 = mat1.get_rows();
         const size_t cols1 = mat1.get_cols();
 
@@ -65,7 +88,7 @@ namespace matmul {
 
     void simd_matmul(const matrix::Matrix<float>& mat1,
                      const matrix::Matrix<float>& mat2,
-                     const matrix::Matrix<float>& ans) {
+                     matrix::Matrix<float>& ans, size_t tilling_size) {
         const size_t rows1 = mat1.get_rows();
         const size_t cols1 = mat1.get_cols();
 
