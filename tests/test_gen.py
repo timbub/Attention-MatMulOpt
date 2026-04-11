@@ -9,8 +9,11 @@ def generate_tensor(b, s, d):
     return res + "\n"
 
 if __name__ == "__main__":
-    B, Sq, Sk, Dk, Dv = 1, 2048, 2048, 2048, 2048
-
+    B = 1
+    Sq = 8192
+    Sk = 8192
+    Dk = 64
+    Dv = 64
     filename = f"{B*Sq*Dv}.txt"
 
     with open(filename, "w") as f:
