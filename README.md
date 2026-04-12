@@ -212,9 +212,9 @@ for (size_t i0 = 0; i0 < rows1; i0 += tiling_size) {                  //
 
 ### Сравнение BasicAttention (SIMD) vs FlashAttention
 Измерения проведены для тензоров с размерами B = 1 Sq = 8192 Sk = 8192 Dk = 64 Dv = 64
-| Параметр | Basic Attention (SIMD) | Basic Attention (Cache)| FlashAttention (Tiled) |
+| Параметр | Basic Attention (SIMD) | Basic Attention (Cache)| FlashAttention|
 | :--- | :--- | :--- | :--- |
-| **Память (Complexity)** | $O(N^2)$ (материализует Scores) | $O(N^2)$ (материализует Scores) | $O(N)$ (только векторы m, d) |
+| **Память** | $O(N^2)$ (материализует Scores) | $O(N^2)$ (материализует Scores) | $O(N)$ (только векторы m, d) |
 | **Память** | 267 MB | 267 MB | **11 MB** |
 | **Время** | 972.937 ms | 1747.49 ms | 1654.5 ms | 
 
