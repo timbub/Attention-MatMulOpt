@@ -206,7 +206,6 @@ for (size_t i0 = 0; i0 < rows1; i0 += tiling_size) {                  //
                 }
             }
         }
-
         return result;
 ```
 </details> 
@@ -218,4 +217,29 @@ for (size_t i0 = 0; i0 < rows1; i0 += tiling_size) {                  //
 | **Память (Complexity)** | $O(N^2)$ (материализует Scores) | $O(N^2)$ (материализует Scores) | $O(N)$ (только векторы m, d) |
 | **Память** | 267 MB | 267 MB | **11 MB** |
 | **Время** | 972.937 ms | 1747.49 ms | 1654.5 ms | 
+
+### Как запустить
+#### Клонируйте репозиторий Matrix_cpp (Данный проект использует модуль matrix из моего другого проекта с реализацией матриц, https://github.com/timbub/Matrix_cpp.git):
+```bash
+git clone ...
+```
+#### Клонируйте текущий репозиторий
+```bash
+git clone ...
+cd Attention-MatMulOpt
+```
+#### Сборка
+```bash
+cmake -DCMAKE_BUILD_TYPE=Release -S . -B build
+cmake --build build
+```
+
+### Запуск
+```bash
+# Format: ./att b|f <naive|cache|tilling|simd|flash> [tile_size]
+# b - basic attention
+# f - flash attention
+# naive|cache|tilling|simd|flash - if you choose basic attention, choose matmul method 
+./att b simd 64 < input_test.txt
+```
 
