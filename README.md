@@ -239,7 +239,8 @@ cmake --build build
 # Format: ./att b|f <naive|cache|tilling|simd|flash> [tile_size]
 # b - basic attention
 # f - flash attention
-# naive|cache|tilling|simd|flash - if you choose basic attention, choose matmul method 
+# naive|cache|tilling|simd|flash - if you choose basic attention, choose matmul method
+# tile_size - optional(default value)
 ./att b simd 64 < input_test.txt
 ```
 
