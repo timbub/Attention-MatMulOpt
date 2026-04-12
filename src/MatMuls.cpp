@@ -24,7 +24,7 @@ namespace matmul {
 
     void naive_matmul(const matrix::Matrix<float>& mat1,
                       const matrix::Matrix<float>& mat2,
-                      matrix::Matrix<float>& ans, size_t tilling_size) {
+                      matrix::Matrix<float>& ans, size_t tiling_size) {
         const size_t rows1 = mat1.get_rows();
         const size_t cols1 = mat1.get_cols();
 
@@ -49,7 +49,7 @@ namespace matmul {
 
     void cache_opt_matmul(const matrix::Matrix<float>& mat1,
                           const matrix::Matrix<float>& mat2,
-                          matrix::Matrix<float>& ans, size_t tilling_size) {
+                          matrix::Matrix<float>& ans, size_t tiling_size) {
         const size_t rows1 = mat1.get_rows();
         const size_t cols1 = mat1.get_cols();
 
@@ -70,9 +70,9 @@ namespace matmul {
             }
         }
     }
-    void tilling_matmul(const matrix::Matrix<float>& mat1,
+    void tiling_matmul(const matrix::Matrix<float>& mat1,
                         const matrix::Matrix<float>& mat2,
-                        matrix::Matrix<float>& ans, size_t tilling_size) {
+                        matrix::Matrix<float>& ans, size_t tiling_size) {
         const size_t rows1 = mat1.get_rows();
         const size_t cols1 = mat1.get_cols();
 
@@ -84,13 +84,13 @@ namespace matmul {
 
         assert(cols1 == rows2 && rows3 == rows1 && cols3 == cols2);
 
-        for (size_t i0 = 0; i0 < rows1; i0 += tilling_size) {
-            for (size_t k0 = 0; k0 < cols1; k0 += tilling_size) {
-                for (size_t j0 = 0; j0 < cols2; j0 += tilling_size) {
+        for (size_t i0 = 0; i0 < rows1; i0 += tiling_size) {
+            for (size_t k0 = 0; k0 < cols1; k0 += tiling_size) {
+                for (size_t j0 = 0; j0 < cols2; j0 += tiling_size) {
 
-                    size_t i_max = std::min(i0 + tilling_size, rows1);
-                    size_t k_max = std::min(k0 + tilling_size, cols1);
-                    size_t j_max = std::min(j0 + tilling_size, cols2);
+                    size_t i_max = std::min(i0 + tiling_size, rows1);
+                    size_t k_max = std::min(k0 + tiling_size, cols1);
+                    size_t j_max = std::min(j0 + tiling_size, cols2);
 
                     for (size_t i = i0; i < i_max; ++i) {
                         for (size_t k = k0; k < k_max; ++k) {
@@ -108,18 +108,18 @@ namespace matmul {
 
     void simd_matmul(const matrix::Matrix<float>& mat1,
                      const matrix::Matrix<float>& mat2,
-                     matrix::Matrix<float>& ans, size_t tilling_size) {
+                     matrix::Matrix<float>& ans, size_t tiling_size) {
         const size_t rows1 = mat1.get_rows();
         const size_t cols1 = mat1.get_cols();
         const size_t cols2 = mat2.get_cols();
 
-        for (size_t i0 = 0; i0 < rows1; i0 += tilling_size) {
-            for (size_t j0 = 0; j0 < cols2; j0 += tilling_size) {
-                for (size_t k0 = 0; k0 < cols1; k0 += tilling_size) {
+        for (size_t i0 = 0; i0 < rows1; i0 += tiling_size) {
+            for (size_t j0 = 0; j0 < cols2; j0 += tiling_size) {
+                for (size_t k0 = 0; k0 < cols1; k0 += tiling_size) {
 
-                    size_t i_max = std::min(i0 + tilling_size, rows1);
-                    size_t j_max = std::min(j0 + tilling_size, cols2);
-                    size_t k_max = std::min(k0 + tilling_size, cols1);
+                    size_t i_max = std::min(i0 + tiling_size, rows1);
+                    size_t j_max = std::min(j0 + tiling_size, cols2);
+                    size_t k_max = std::min(k0 + tiling_size, cols1);
 
                     size_t i = i0;
                     for (; i + 1 < i_max; i += 2) {

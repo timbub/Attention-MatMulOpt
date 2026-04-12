@@ -18,16 +18,16 @@ namespace matmul {
 
     void naive_matmul(const matrix::Matrix<float>& mat1,
                       const matrix::Matrix<float>& mat2,
-                      matrix::Matrix<float>& ans, size_t tilling_size);
+                      matrix::Matrix<float>& ans, size_t tiling_size);
 
     void cache_opt_matmul(const matrix::Matrix<float>& mat1,
                           const matrix::Matrix<float>& mat2,
-                          matrix::Matrix<float>& ans, size_t tilling_size);
-    void tilling_matmul(const matrix::Matrix<float>& mat1,
+                          matrix::Matrix<float>& ans, size_t tiling_size);
+    void tiling_matmul(const matrix::Matrix<float>& mat1,
                         const matrix::Matrix<float>& mat2,
-                        matrix::Matrix<float>& ans, size_t tilling_size);
+                        matrix::Matrix<float>& ans, size_t tiling_size);
 
     void simd_matmul(const matrix::Matrix<float>& mat1,
                      const matrix::Matrix<float>& mat2,
-                     matrix::Matrix<float>& ans, size_t tilling_size);
+                     matrix::Matrix<float>& ans, size_t tiling_size);
 };

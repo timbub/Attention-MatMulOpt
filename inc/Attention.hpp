@@ -11,7 +11,7 @@ namespace attention {
                                                 const tensor::Tensor<float>& K,
                                                 const tensor::Tensor<float>& V,
                                                 matmul::MatMulType matmul_type,
-                                                 size_t tilling_size);
+                                                 size_t tiling_size);
     void process_flash_block(const matrix::Matrix<float>& Q,
                          const matrix::Matrix<float>& K,
                          const matrix::Matrix<float>& V,
@@ -23,6 +23,6 @@ namespace attention {
     tensor::Tensor<float> flash_attention(const tensor::Tensor<float>& Q,
                                           const tensor::Tensor<float>& K,
                                           const tensor::Tensor<float>& V,
-                                          size_t tilling_size);
+                                          size_t tiling_size);
 
 };

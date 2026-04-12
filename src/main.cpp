@@ -37,7 +37,7 @@ tensor::Tensor<float> read_tensor_from_cin() {
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-        std::cerr << "Usage: " << argv[0] << " <b|f> <naive|cache|simd|tilling> [tilling_size]\n";
+        std::cerr << "Usage: " << argv[0] << " <b|f> <naive|cache|simd|tiling> [tiling_size]\n";
         return 1;
     }
 
@@ -57,13 +57,13 @@ int main(int argc, char* argv[]) {
 
     if (at_type == AttType::BASIC) {
         if (argc < 3) {
-            std::cerr << "Error: Basic attention requires a matmul mode (naive|cache|simd|tilling)\n";
+            std::cerr << "Error: Basic attention requires a matmul mode (naive|cache|simd|tiling)\n";
             return 1;
         }
         mode = argv[2];
         if (mode == "naive") matmul_type = matmul::MatMulType::NAIVE;
         else if (mode == "cache") matmul_type = matmul::MatMulType::CACHE_OPTIMIZED;
-        else if (mode == "tilling") matmul_type = matmul::MatMulType::TILLING;
+        else if (mode == "tiling") matmul_type = matmul::MatMulType::TILLING;
         else if (mode == "simd") matmul_type = matmul::MatMulType::SIMD;
         else {
             std::cerr << "Error: Unknown mode '" << mode << "'\n";
@@ -71,9 +71,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    size_t tilling_size = 32;
+    size_t tiling_size = 32;
     if (argc >= 4) {
-        tilling_size = std::stoul(argv[3]);
+        tiling_size = std::stoul(argv[3]);
     }
 
     try {
@@ -95,9 +95,9 @@ int main(int argc, char* argv[]) {
 
         auto start_time = std::chrono::high_resolution_clock::now();
         if (at_type == AttType::BASIC) {
-            result = attention::attention_with_matmul(Q, K, V, matmul_type, tilling_size);
+            result = attention::attention_with_matmul(Q, K, V, matmul_type, tiling_size);
         } else {
-            result = attention::flash_attention(Q, K, V, tilling_size);
+            result = attention::flash_attention(Q, K, V, tiling_size);
         }
         auto end_time = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double, std::milli> time = end_time - start_time;
