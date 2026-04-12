@@ -29,10 +29,70 @@ $$
 *   Ускорение благодаря временной локальности. Мы многократно переиспользуем данные блока, прежде чем они будут вытеснены из кэша следующими данными.
 
 ### SIMD MatMul
-*   Использование векторных инструкций для обработки 8 чисел `float` за один такт.
+*   Использование векторных инструкций для обработки 8 чисел `float` за один такт. Также используем tiling, но теперь вычисляем все пачками данных, используем 14 векторных регистров для вычисления.
+  <details>
+<summary> Code</summary>
+
+```bash
+...
+for (size_t i0 = 0; i0 < rows1; i0 += tilling_size) {                  //
+            for (size_t j0 = 0; j0 < cols2; j0 += tilling_size) {      // tiling
+                for (size_t k0 = 0; k0 < cols1; k0 += tilling_size) {  //
+                ...
+                    size_t i = i0;
+                    for (; i + 1 < i_max; i += 2) {
+                    ...
+                        size_t j = j0;
+                        for (; j + 31 < j_max; j += 32) {
+                        ...
+                            __m256 c00 = _mm256_setzero_ps(), c01 = _mm256_setzero_ps();
+                            __m256 c02 = _mm256_setzero_ps(), c03 = _mm256_setzero_ps();
+                            __m256 c10 = _mm256_setzero_ps(), c11 = _mm256_setzero_ps();
+                            __m256 c12 = _mm256_setzero_ps(), c13 = _mm256_setzero_ps(); //reserve reg_rectors for ans
+
+                            for (size_t k = k0; k < k_max; ++k) {
+                                __m256 a0 = _mm256_set1_ps(mat1[i][k]);
+                                __m256 a1 = _mm256_set1_ps(mat1[i + 1][k]); //copy elements from mat1
+
+                                const float* b_ptr = &mat2[k][j];
+                                __m256 b0 = _mm256_loadu_ps(b_ptr);
+                                __m256 b1 = _mm256_loadu_ps(b_ptr + 8);
+                                __m256 b2 = _mm256_loadu_ps(b_ptr + 16);
+                                __m256 b3 = _mm256_loadu_ps(b_ptr + 24); //store elements from mat2
+
+                                c00 = _mm256_fmadd_ps(a0, b0, c00);
+                                ...
+                                c13 = _mm256_fmadd_ps(a1, b3, c13); // c = c + a*b
+                            }
+
+                            _mm256_storeu_ps(c_ptr0 + j,      _mm256_add_ps(_mm256_loadu_ps(c_ptr0 + j), c00));
+                            ...
+                            _mm256_storeu_ps(c_ptr1 + j + 24, _mm256_add_ps(_mm256_loadu_ps(c_ptr1 + j + 24), c13)); //after full processing store to ans
+                        }
+
+                        for (; j < j_max; ++j) {
+                        //processing tail for j
+                        }
+                    }
+
+                    for (; i < i_max; ++i) { // processing tail for i
+                        float* c_ptr = &ans[i][0];
+                        for (size_t j = j0; j < j_max; ++j) {
+                            float sum = 0;
+                            for (size_t k = k0; k < k_max; ++k) {
+                                sum += mat1[i][k] * mat2[k][j];
+                            }
+                            c_ptr[j] += sum;
+                        }
+                    }
+                }
+            }
+        }
+```
+</details> 
 
 ## 2. Анализ производительности
-
+Измерена реализация Attention Layer с помощью разных видов матричного умножения
 ### Таблица измерений
 
 |Кол-во элементов выходной матриццы| Naive (i-j-k) | Cache (i-k-j) | Tilling (64x64) | SIMD|
@@ -50,4 +110,112 @@ $$
 
 ![Линейная шкала](graphics/g1.jpg)
 ![Логарифмическая шкала](graphics/g2.jpg)
+
+## 3. FlashAttention (Online Softmax)
+
+### Идея и реализация
+Основная проблема стандартного Attention — мы **выделяем отдельно в памяти** матрицу внимания($Q$*$K_t$) и сначала работаем с ней, применяем softmax и умножаем на тензор $Values$.
+
+**FlashAttention** реализовано экономнее:
+
+Мы не создаем матрицу $Scores$ размером $seq_q * seq_k$, мы создаем маленькие буферы размером tilling_size.
+Так как мы идем тайлами по матрицам $Q$ и $K_t$ мы не высчитываем до конца для матрицы внимания и не можем найти сумму элементов всец строки и применить софтмакс, но мы все равно применяем его, используя каждый раз корректировку **(Online Softmax)**: 
+
+На каждом новом тайле вычисляется локальный максимум $m_{block}$, который сравнивается с глобальным максимумом $m_{old}$, полученным на предыдущих этапах. Новый глобальный максимум определяется по формуле $m_{new} = \max(m_{old}, m_{block})$. В случае, если новый максимум превышает старый, ранее вычисленные значения становятся математически неверными, так как их масштаб был привязан к старому значению. Для исправления этой ситуации накопленная сумма знаменателя $d$ и вектор ответа $O$ домножаются на коэффициент коррекции $e^{m_{old} - m_{new}}$. После корректировки вычисляются экспоненты для элементов текущего тайла относительно нового максимума $m_{new}$, которые затем прибавляются к общей сумме $d$, а взвешенные значения из тайла $V$ добавляются к вектору ответа $O$. Итоговый результат формируется только после обработки всех тайлов ключей $K$ для текущего запроса $Q$ однократным делением накопленного вектора $O$ на финальную сумму экспонент $d$.
+
+  <details>
+<summary> Code</summary>
+
+```bash
+        ...
+        std::vector<float> S_block(tilling_size * tilling_size, 0.0f); //for Q*K_t
+        std::vector<float> O_block(tilling_size * dv, 0.0f); //for S_block*V
+        std::vector<float> m_val(tilling_size, -INFINITY);
+        std::vector<float> d_val(tilling_size, 0.0f);
+        ...
+        for (size_t b = 0; b < batch_size; ++b) {
+        ...
+            for (size_t i0 = 0; i0 < seq_q; i0 += tilling_size) { //tiling
+            ...
+
+                //Q*scale
+                for (size_t i = 0; i < block_q_len; ++i) {
+                ...
+                    for (size_t k = 0; k < dk; ++k) {
+                        q_s_row[k] = q_row[k] * scale;
+                    }
+                }
+
+                //create S_block
+                for (size_t j0 = 0; j0 < seq_k; j0 += tilling_size) {
+                ...
+                    for (size_t i = 0; i < block_q_len; ++i) {
+                        const float* q_row = &Q_scaled[i * dk];
+                        float*  s_row = &S_block[i * block_k_len];
+                        for (size_t k = 0; k < dk; ++k) {
+                            float r = q_row[k];
+                            const float* kt_row = &k_T[k][j0];
+                            for (size_t j = 0; j < block_k_len; ++j) {
+                                s_row[j] += r * kt_row[j];
+                            }
+                        }
+                    }
+
+                    //softmax
+                    for (size_t i = 0; i < block_q_len; ++i) {
+                        float*  s_row = &S_block[i * block_k_len];
+                        float*  o_row = &O_block[i * dv];
+                        //find max
+                        float m_block = -INFINITY;
+                        for (size_t j = 0; j < block_k_len; ++j) {
+                            if (s_row[j] > m_block) m_block = s_row[j];
+                        }
+                        ...
+                        //update d
+                        for (size_t j = 0; j < block_k_len; ++j) {
+                            s_row[j] = std::exp(s_row[j] - m_new);
+                            d_block += s_row[j];
+                        }
+
+                        m_val[i] = m_new;
+                        d_val[i] = d_val[i] * exp_old + d_block;
+
+                        for (size_t v = 0; v < dv; ++v) {
+                            o_row[v] *= exp_old;
+                        }
+
+                        //create  O_block
+                        for (size_t j = 0; j < block_k_len; ++j) {
+                            float p = s_row[j];
+                            const float* v_row = &v_mat[j0 + j][0];
+                            for (size_t v = 0; v < dv; ++v) {
+                                o_row[v] += p * v_row[v];
+                            }
+                        }
+                    }
+                }
+                //answer = answer/d
+                for (size_t i = 0; i < block_q_len; ++i) {
+                    float inv_d = 1.0f / d_val[i];
+                    const float* o_row = &O_block[i * dv];
+                    float* out_row = &out_mat[i0 + i][0];
+
+                    for (size_t v = 0; v < dv; ++v) {
+                        out_row[v] = o_row[v] * inv_d;
+                    }
+                }
+            }
+        }
+
+        return result;
+```
+</details> 
+
+### Сравнение BasicAttention (SIMD) vs FlashAttention
+Измерения проведены для тензоров с размерами B = 1 Sq = 8192 Sk = 8192 Dk = 64 Dv = 64
+| Параметр | Basic Attention (SIMD) | Basic Attention (Cache)| FlashAttention (Tiled) |
+| :--- | :--- | :--- | :--- |
+| **Память (Complexity)** | $O(N^2)$ (материализует Scores) | $O(N^2)$ (материализует Scores) | $O(N)$ (только векторы m, d) |
+| **Память** | 267 MB | 267 MB | **11 MB** |
+| **Время** | 972.937 ms | 1747.49 ms | 1654.5 ms | 
 
